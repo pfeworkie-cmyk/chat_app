@@ -1,5 +1,5 @@
 # Using Node 24 
-FROM node:24-slim
+FROM node:21
 
 WORKDIR /usr/src/app
 
