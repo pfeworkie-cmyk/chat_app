@@ -184,14 +184,14 @@ body.dark {
 .onoffswitch-inner:before {
    content: "ON";
    padding-left: 10px;
-   background-color: #41D627;
+   background-color: #2E8B57; /* Darker green for better contrast */
    color: #fff;
 }
 
 .onoffswitch-inner:after {
    content: "OFF";
    padding-right: 10px;
-   background-color: #ED2323;
+   background-color: #B22222; /* Darker red for better contrast */
    color: #fff;
    text-align: right;
 }
