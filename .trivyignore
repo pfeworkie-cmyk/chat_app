@@ -1,0 +1,4 @@
+# zlib: integer overflow in zipOpenNewFileInZip4_6
+# This is marked 'will_not_fix' in Debian 12. 
+# Our chat app does not use minizip functionality.
+CVE-2023-45853
