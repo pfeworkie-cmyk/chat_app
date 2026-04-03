@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-app
+  labels:
+    app: chat-app
+spec:
+  replicas: 2           # Runs 2 copies for high availability
+  selector:
+    matchLabels:
+      app: chat-app
+  template:
+    metadata:
+      labels:
+        app: chat-app
+    spec:
+      containers:
+      - name: chat-app
+        image: pfework2026/chat_app:latest # Jenkins will update this tag
+        ports:
+        - containerPort: 3000              # The internal port of the app

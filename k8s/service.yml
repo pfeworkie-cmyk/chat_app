@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-app-service
+spec:
+  selector:
+    app: chat-app       # This connects the Service to the Deployment above
+  type: NodePort        # Makes the app accessible outside the cluster
+  ports:
+    - protocol: TCP
+      port: 80          # Internal cluster port
+      targetPort: 3000  # The app's port inside the container
+      nodePort: 30007   # THE EXTERNAL PORT WILL BE USED IN THE BROWSER
