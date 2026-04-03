@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-window.addEventListener('DOMContentLoaded', () => {
+globalThis.addEventListener('DOMContentLoaded', () => {
   const button = document.getElementById('emoji-button');
   const picker = new EmojiButton({ theme: 'dark', autoHide: false, position: 'auto-start' });
   picker.on('emoji', (emoji) => {
@@ -51,5 +51,12 @@ function sendOnEnter(event) {
 function loginOnEnter(event) {
   if (event.key === 'Enter') {
     document.getElementById('send-username').click();
+  }
+}
+
+function handleGithubButtonKeydown(event) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    document.getElementById('gh-button').click();
   }
 }
