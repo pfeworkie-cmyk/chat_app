@@ -1,14 +1,18 @@
-data "aws_caller_identity" "current" {}
 provider "aws" {
   region = "us-east-1"
 }
+
+# Récupère dynamiquement l'ID de ton compte AWS actuel
+data "aws_caller_identity" "current" {}
 
 # 1. Création du VPC
 resource "aws_vpc" "my_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags = { Name = "my-eks-vpc" }
+  tags = {
+    Name = "my-eks-vpc"
+  }
 }
 
 # 2. Création des Subnets (Indispensable pour EKS)
@@ -17,7 +21,9 @@ resource "aws_subnet" "subnet_1" {
   cidr_block        = "10.0.1.0/24"
   availability_zone = "us-east-1a"
   map_public_ip_on_launch = true
-  tags = { Name = "eks-subnet-1" }
+  tags = {
+    Name = "eks-subnet-1"
+  }
 }
 
 resource "aws_subnet" "subnet_2" {
@@ -25,10 +31,12 @@ resource "aws_subnet" "subnet_2" {
   cidr_block        = "10.0.2.0/24"
   availability_zone = "us-east-1b"
   map_public_ip_on_launch = true
-  tags = { Name = "eks-subnet-2" }
+  tags = {
+    Name = "eks-subnet-2"
+  }
 }
 
-# 3. Internet Gateway pour l'accès public
+# 3. Gateway et Table de routage (pour que tes nodes sortent sur Internet)
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.my_vpc.id
 }
@@ -51,10 +59,10 @@ resource "aws_route_table_association" "b" {
   route_table_id = aws_route_table.rt.id
 }
 
-# 4. Groupes de Sécurité (Lies dynamiquement au vpc_id)
+# 4. Groupes de Sécurité
 resource "aws_security_group" "eks_cluster_sg" {
   name        = "eks-cluster-sg-mykubernetes"
-  vpc_id      = aws_vpc.my_vpc.id # CORRECTION ICI
+  vpc_id      = aws_vpc.my_vpc.id
 
   ingress {
     from_port   = 8083
@@ -73,7 +81,7 @@ resource "aws_security_group" "eks_cluster_sg" {
 
 resource "aws_security_group" "eks_worker_sg" {
   name        = "eks-worker-sg-mykubernetes"
-  vpc_id      = aws_vpc.my_vpc.id # CORRECTION ICI
+  vpc_id      = aws_vpc.my_vpc.id
 
   ingress {
     from_port   = 30000
@@ -90,28 +98,31 @@ resource "aws_security_group" "eks_worker_sg" {
   }
 }
 
-# 5. Cluster EKS
+# 5. Cluster EKS (Utilise le LabRole dynamique)
 resource "aws_eks_cluster" "my_cluster" {
   name     = "mykubernetes"
-  role_arn = "arn:aws:iam::744983671605:role/LabRole"
+  role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
   version  = "1.30"
 
   vpc_config {
-    subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id] # CORRECTION ICI
+    subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
     security_group_ids = [aws_security_group.eks_cluster_sg.id]
+    endpoint_public_access = true
   }
 }
 
-# 6. Node Group (Les machines qui font tourner ton app)
+# 6. Node Group (Les machines de ton cluster)
 resource "aws_eks_node_group" "my_node_group" {
   cluster_name    = aws_eks_cluster.my_cluster.name
   node_group_name = "noeud1"
-  node_role_arn   = "arn:aws:iam::744983671605:role/LabRole"
-  subnet_ids      = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id] # CORRECTION ICI
+  node_role_arn   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  subnet_ids      = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
 
   scaling_config {
     desired_size = 2
     max_size     = 3
     min_size     = 1
   }
+
+  instance_types = ["t3.medium"]
 }
