@@ -72,7 +72,7 @@ resource "aws_eks_cluster" "chat_cluster" {
     subnet_ids              = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
     endpoint_public_access  = true
     endpoint_private_access = true
-    public_access_cidrs     = var.cluster_endpoint_public_access_cidrs
+    public_access_cidrs     = ["0.0.0.0/0"] # Ensure open access for Jenkins/external tooling
   }
 }
 
@@ -91,6 +91,9 @@ resource "aws_eks_node_group" "chat_workers" {
   }
 
   instance_types = ["t3.medium"]
+
+  # Ensures cluster is fully ready before creating nodes
+  depends_on = [aws_eks_cluster.chat_cluster]
 }
 
 # --- OUTPUTS ---
