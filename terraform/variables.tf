@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "cluster_name" {
   description = "Nom du cluster EKS"
   type        = string
-  default     = "my-chat-app-cluster"
+  default     = "mykubernetes"
 }
 
 variable "role_arn" {
