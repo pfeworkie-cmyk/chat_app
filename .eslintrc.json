@@ -1,0 +1,25 @@
+{
+  "root": true,
+  "env": {
+    "es2022": true
+  },
+  "extends": ["eslint:recommended"],
+  "overrides": [
+    {
+      "files": ["server.js", "test/**/*.js"],
+      "env": {
+        "node": true
+      }
+    },
+    {
+      "files": ["public/js/**/*.js"],
+      "env": {
+        "browser": true
+      },
+      "globals": {
+        "io": "readonly",
+        "EmojiButton": "readonly"
+      }
+    }
+  ]
+}
