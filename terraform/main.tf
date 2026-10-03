@@ -12,10 +12,16 @@ provider "aws" {
   region = var.aws_region
 }
 
-# --- VARIABLE FOR DYNAMIC SUBNETS ---
-variable "subnet_ids" {
-  type        = list(string)
-  description = "List of default subnet IDs passed dynamically by Jenkins"
+# --- DATA SOURCES TO AUTOMATICALLY FETCH DEFAULT SUBNETS ---
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 # --- EKS CLUSTER & WORKER NODES ---
@@ -25,10 +31,10 @@ resource "aws_eks_cluster" "chat_cluster" {
   version  = "1.30"
 
   vpc_config {
-    subnet_ids              = var.subnet_ids
+    subnet_ids              = data.aws_subnets.default.ids
     endpoint_public_access  = true
     endpoint_private_access = true
-    public_access_cidrs     = ["0.0.0.0/0"]
+    public_access_cidrs     = var.cluster_endpoint_public_access_cidrs
   }
 }
 
@@ -36,7 +42,7 @@ resource "aws_eks_node_group" "chat_workers" {
   cluster_name    = aws_eks_cluster.chat_cluster.name
   node_group_name = "chat-app-workers"
   node_role_arn   = var.role_arn
-  subnet_ids      = var.subnet_ids
+  subnet_ids      = data.aws_subnets.default.ids
 
   ami_type        = "AL2_x86_64"
 
