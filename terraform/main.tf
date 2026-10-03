@@ -12,7 +12,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-# --- DATA SOURCES TO AUTOMATICALLY FETCH DEFAULT SUBNETS ---
+# --- DATA SOURCES TO AUTOMATICALLY FETCH VALID SUBNETS (EXCLUDING us-east-1e) ---
 data "aws_vpc" "default" {
   default = true
 }
@@ -24,6 +24,17 @@ data "aws_subnets" "default" {
   }
 }
 
+data "aws_subnet" "filtered" {
+  for_each = toset(data.aws_subnets.default.ids)
+  id       = each.value
+}
+
+locals {
+  valid_subnet_ids = [
+    for s in data.aws_subnet.filtered : s.id if s.availability_zone != "us-east-1e"
+  ]
+}
+
 # --- EKS CLUSTER & WORKER NODES ---
 resource "aws_eks_cluster" "chat_cluster" {
   name     = var.cluster_name
@@ -31,7 +42,7 @@ resource "aws_eks_cluster" "chat_cluster" {
   version  = "1.30"
 
   vpc_config {
-    subnet_ids              = data.aws_subnets.default.ids
+    subnet_ids              = local.valid_subnet_ids
     endpoint_public_access  = true
     endpoint_private_access = true
     public_access_cidrs     = var.cluster_endpoint_public_access_cidrs
@@ -42,7 +53,7 @@ resource "aws_eks_node_group" "chat_workers" {
   cluster_name    = aws_eks_cluster.chat_cluster.name
   node_group_name = "chat-app-workers"
   node_role_arn   = var.role_arn
-  subnet_ids      = data.aws_subnets.default.ids
+  subnet_ids      = local.valid_subnet_ids
 
   ami_type        = "AL2_x86_64"
 
