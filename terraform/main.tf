@@ -39,7 +39,7 @@ locals {
 resource "aws_eks_cluster" "chat_cluster" {
   name     = var.cluster_name
   role_arn = var.role_arn
-  version  = "1.30"
+  version  = "1.31"
 
   vpc_config {
     subnet_ids              = local.valid_subnet_ids
