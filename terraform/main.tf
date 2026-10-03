@@ -44,7 +44,7 @@ resource "aws_eks_cluster" "chat_cluster" {
   vpc_config {
     subnet_ids              = local.valid_subnet_ids
     endpoint_public_access  = true
-    endpoint_private_access = true
+    endpoint_private_access = false
     public_access_cidrs     = var.cluster_endpoint_public_access_cidrs
   }
 }
