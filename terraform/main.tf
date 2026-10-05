@@ -12,7 +12,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-# --- DATA SOURCES TO AUTOMATICALLY FETCH VALID SUBNETS (EXCLUDING us-east-1e) ---
+# --- DATA SOURCES POUR LES SOUS-RESEAUX (EXCLUANT us-east-1e) ---
 data "aws_vpc" "default" {
   default = true
 }
@@ -35,7 +35,7 @@ locals {
   ]
 }
 
-# --- EKS CLUSTER ---
+# --- CLUSTER EKS ---
 resource "aws_eks_cluster" "chat_cluster" {
   name     = var.cluster_name
   role_arn = var.role_arn
@@ -49,35 +49,7 @@ resource "aws_eks_cluster" "chat_cluster" {
   }
 }
 
-# --- LAUNCH TEMPLATE AVEC SCRIPT DE BOOTSTRAP EXPLICITE ---
-resource "aws_launch_template" "worker_node_lt" {
-  name_prefix = "chat-worker-lt-"
-
-  network_interfaces {
-    associate_public_ip_address = true
-    delete_on_termination       = true
-  }
-
-  # Script de bootstrap requis pour enregistrer les instances auprès du cluster EKS
-  user_data = base64encode(<<-EOT
-    MIME-Version: 1.0
-    Content-Type: multipart/mixed; boundary="==MYBOUNDARY=="
-
-    --==MYBOUNDARY==
-    Content-Type: text/x-shellscript; charset="us-ascii"
-
-    #!/bin/bash
-    set -ex
-    /etc/eks/bootstrap.sh ${aws_eks_cluster.chat_cluster.name} \
-      --b64-cluster-ca "${aws_eks_cluster.chat_cluster.certificate_authority[0].data}" \
-      --apiserver-endpoint "${aws_eks_cluster.chat_cluster.endpoint}"
-
-    --==MYBOUNDARY==--
-  EOT
-  )
-}
-
-# --- EKS WORKER NODE GROUP ---
+# --- GROUPE DE NOEUDS SIMPLIFIE (SANS LAUNCH TEMPLATE) ---
 resource "aws_eks_node_group" "chat_workers" {
   cluster_name    = aws_eks_cluster.chat_cluster.name
   node_group_name = "chat-app-workers"
@@ -91,12 +63,6 @@ resource "aws_eks_node_group" "chat_workers" {
     desired_size = 2
     max_size     = 3
     min_size     = 1
-  }
-
-  # Attachement du launch template pour les adresses IP publiques et le bootstrap
-  launch_template {
-    id      = aws_launch_template.worker_node_lt.id
-    version = aws_launch_template.worker_node_lt.latest_version
   }
 
   depends_on = [aws_eks_cluster.chat_cluster]
