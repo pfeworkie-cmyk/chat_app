@@ -12,7 +12,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-# --- DATA SOURCES FOR SUBNETS (EXCLUDING us-east-1e) ---
+# --- DATA SOURCES POUR LES SOUS-RESEAUX (EXCLUANT us-east-1e) ---
 data "aws_vpc" "default" {
   default = true
 }
@@ -35,7 +35,7 @@ locals {
   ]
 }
 
-# --- EKS CLUSTER ---
+# --- CLUSTER EKS ---
 resource "aws_eks_cluster" "chat_cluster" {
   name     = var.cluster_name
   role_arn = var.role_arn
@@ -49,11 +49,11 @@ resource "aws_eks_cluster" "chat_cluster" {
   }
 }
 
-# --- EKS WORKER NODE GROUP ---
+# --- GROUPE DE NOEUDS SIMPLIFIE (SANS LAUNCH TEMPLATE) ---
 resource "aws_eks_node_group" "chat_workers" {
   cluster_name    = aws_eks_cluster.chat_cluster.name
   node_group_name = "chat-app-workers"
-  node_role_arn   = var.node_role_arn
+  node_role_arn   = var.role_arn
   subnet_ids      = local.valid_subnet_ids
 
   ami_type       = "AL2_x86_64"
