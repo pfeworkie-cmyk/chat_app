@@ -35,7 +35,7 @@ locals {
   ]
 }
 
-# --- EKS CLUSTER & WORKER NODES ---
+# --- EKS CLUSTER ---
 resource "aws_eks_cluster" "chat_cluster" {
   name     = var.cluster_name
   role_arn = var.role_arn
@@ -49,13 +49,26 @@ resource "aws_eks_cluster" "chat_cluster" {
   }
 }
 
+# --- LAUNCH TEMPLATE TO ASSIGN PUBLIC IPS TO WORKER NODES ---
+resource "aws_launch_template" "worker_node_lt" {
+  name_prefix   = "chat-worker-lt-"
+  image_id      = data.aws_ssm_parameter.eks_ami.value # Optional, or let EKS use default AMI
+  
+  network_interfaces {
+    associate_public_ip_address = true
+    delete_on_termination       = true
+  }
+}
+
+# --- EKS WORKER NODE GROUP ---
 resource "aws_eks_node_group" "chat_workers" {
   cluster_name    = aws_eks_cluster.chat_cluster.name
   node_group_name = "chat-app-workers"
   node_role_arn   = var.role_arn
   subnet_ids      = local.valid_subnet_ids
 
-  ami_type        = "AL2_x86_64"
+  ami_type       = "AL2_x86_64"
+  instance_types = ["t3.medium"]
 
   scaling_config {
     desired_size = 2
@@ -63,9 +76,18 @@ resource "aws_eks_node_group" "chat_workers" {
     min_size     = 1
   }
 
-  instance_types = ["t3.medium"]
+  # Attach launch template to fix the NodeCreationFailure timeout
+  launch_template {
+    id      = aws_launch_template.worker_node_lt.id
+    version = aws_launch_template.worker_node_lt.latest_version
+  }
 
   depends_on = [aws_eks_cluster.chat_cluster]
+}
+
+# --- OPTIONAL: FETCH LATEST EKS OPTIMIZED AMI AUTOMATICALLY ---
+data "aws_ssm_parameter" "eks_ami" {
+  name = "/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id"
 }
 
 # --- OUTPUTS ---
