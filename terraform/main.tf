@@ -51,8 +51,7 @@ resource "aws_eks_cluster" "chat_cluster" {
 
 # --- LAUNCH TEMPLATE TO ASSIGN PUBLIC IPS TO WORKER NODES ---
 resource "aws_launch_template" "worker_node_lt" {
-  name_prefix   = "chat-worker-lt-"
-  image_id      = data.aws_ssm_parameter.eks_ami.value # Optional, or let EKS use default AMI
+  name_prefix = "chat-worker-lt-"
   
   network_interfaces {
     associate_public_ip_address = true
@@ -76,18 +75,13 @@ resource "aws_eks_node_group" "chat_workers" {
     min_size     = 1
   }
 
-  # Attach launch template to fix the NodeCreationFailure timeout
+  # Attach launch template to fix public IP assignments
   launch_template {
     id      = aws_launch_template.worker_node_lt.id
     version = aws_launch_template.worker_node_lt.latest_version
   }
 
   depends_on = [aws_eks_cluster.chat_cluster]
-}
-
-# --- OPTIONAL: FETCH LATEST EKS OPTIMIZED AMI AUTOMATICALLY ---
-data "aws_ssm_parameter" "eks_ami" {
-  name = "/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id"
 }
 
 # --- OUTPUTS ---
