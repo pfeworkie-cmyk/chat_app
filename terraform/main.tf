@@ -49,7 +49,7 @@ resource "aws_eks_cluster" "chat_cluster" {
   }
 }
 
-# --- GROUPE DE NOEUDS SIMPLIFIE (SANS LAUNCH TEMPLATE) ---
+# --- GROUPE DE NOEUDS SIMPLIFIE ---
 resource "aws_eks_node_group" "chat_workers" {
   cluster_name    = aws_eks_cluster.chat_cluster.name
   node_group_name = "chat-app-workers"
