@@ -25,7 +25,7 @@ variable "vpc_cidr" {
 variable "cluster_endpoint_public_access_cidrs" {
   description = "CIDR autorisés à joindre l’endpoint public EKS"
   type        = list(string)
-  default     = ["18.232.247.183/32"]
+  default     = ["184.194.229.118/32"]
 
   validation {
     condition     = length(var.cluster_endpoint_public_access_cidrs) > 0 && !contains(var.cluster_endpoint_public_access_cidrs, "0.0.0.0/0")
