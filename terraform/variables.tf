@@ -20,7 +20,7 @@ variable "cluster_endpoint_public_access_cidrs" {
   description = "CIDR autorisés à joindre l'endpoint public EKS (votre PC + l'IP publique de Jenkins)"
   type        = list(string)
   # Remplacez IP_PUBLIQUE_JENKINS par le résultat de: curl ifconfig.me (sur l'instance Jenkins)
-  default = ["184.194.229.118/32", "IP_PUBLIQUE_JENKINS/32"]
+  default = ["184.194.229.118/32", "34.230.228.102/32"]
 
   validation {
     condition     = length(var.cluster_endpoint_public_access_cidrs) > 0 && !contains(var.cluster_endpoint_public_access_cidrs, "0.0.0.0/0")
