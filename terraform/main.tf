@@ -49,7 +49,19 @@ resource "aws_eks_cluster" "chat_cluster" {
   }
 }
 
-# --- GROUPE DE NOEUDS SIMPLIFIE ---
+# --- AUTORISER LE VPC (DONC JENKINS) A JOINDRE L'API EKS SUR LE PORT 443 ---
+# Sans cette regle, kubectl depuis l'instance Jenkins expire (i/o timeout)
+resource "aws_security_group_rule" "vpc_to_eks_api" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_eks_cluster.chat_cluster.vpc_config[0].cluster_security_group_id
+  cidr_blocks       = [data.aws_vpc.default.cidr_block]
+  description       = "VPC (Jenkins) vers API EKS"
+}
+
+# --- GROUPE DE NOEUDS ---
 resource "aws_eks_node_group" "chat_workers" {
   cluster_name    = aws_eks_cluster.chat_cluster.name
   node_group_name = "chat-app-workers"
@@ -65,7 +77,10 @@ resource "aws_eks_node_group" "chat_workers" {
     min_size     = 1
   }
 
-  depends_on = [aws_eks_cluster.chat_cluster]
+  depends_on = [
+    aws_eks_cluster.chat_cluster,
+    aws_security_group_rule.vpc_to_eks_api
+  ]
 }
 
 # --- OUTPUTS ---
